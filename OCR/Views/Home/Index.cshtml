@@ -1,0 +1,119 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1>OCR Example</h1>
+    <p><input type="file" id="fileInput" /></p>
+    <p id="txtResult" class="d-flex"></p>
+
+</div>
+
+@section scripts{
+   @* <script>
+        const input = document.getElementById('fileInput');
+        input.addEventListener('change', () => {
+            const file = input.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.addEventListener('load', () => {
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = () => {
+                        // The image is loaded
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        //for (let i = 0; i < data.length; i += 4) {
+                        //    data[i] += 130;       // Red channel
+                        //    data[i + 1] += 130;   // Green channel
+                        //    data[i + 2] += 130;   // Blue channel 
+                        //}
+                        ctx.putImageData(imageData, 0, 0);
+                        const newImg = document.createElement('img');
+                        let imageDataUrl = canvas.toDataURL();
+                        newImg.src = imageDataUrl;
+                        const resultDiv = document.getElementById('txtResult');
+                        resultDiv.appendChild(newImg);
+
+                        $.post('/ReadTextFromBase64', { imageDataUrl }).done(response=>{
+                            console.log(response);
+                            $('#txtResult').append(response);
+                        })
+                    };
+                });
+                reader.readAsDataURL(file);
+            }
+        });
+
+
+    </script>*@
+    <script>
+        // Select the file input element
+        var fileInput = $('#fileInput');
+
+        // Attach an event handler for when the file input changes
+        fileInput.on('change', function () {
+            // Create a new FormData object
+            let formData = new FormData();
+            // Add the file to the form data
+            formData.append('file', fileInput[0].files[0]);
+            // Make an AJAX request to the server
+            $.ajax({
+                url: '/ReadTextFromImage',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (resp) {
+                    console.log(resp);
+                    displayResult(`data:image/png;base64,${resp.img}`,resp.ocrText);
+                    //$('#txtResult').text(resp.ocrText);
+                },
+                error: function (xhr, status, error) {
+                    console.error(xhr.responseText);
+                }
+            });
+        });
+
+        function downloadImage(base64String, fileName) {
+            // Create a new anchor element
+            var link = document.createElement('a');
+
+            // Set the href attribute of the anchor element to the base64 string
+            link.href = base64String;
+
+            // Set the download attribute of the anchor element to the file name
+            link.download = fileName;
+
+            // Trigger a click event on the anchor element to start the download
+            link.click();
+        }
+        function displayResult(base64String, ocrText) {
+            console.log('base64String : ', base64String);
+            // Create a new image element
+            var img = $('<img>');
+
+            // Set the src attribute of the image element to the base64 string
+            img.attr('src', base64String);
+
+            // Create a new span element
+            var span = $(`<span><img src="${base64String}"/><br/>${ocrText}</span>`);
+
+            // Set the text of the span element to the OCR text
+            //span.text(ocrText);
+
+            // Append the image and span elements to the document body
+            $('#txtResult').append(span);
+        }
+
+
+    </script>
+
+}
